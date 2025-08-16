@@ -31,10 +31,4 @@ routes.post('/logout', authMiddleware.isAuth, userController.logout);
 // // POST - /user/password/reset
 // routes.post('/password/reset', userValidate.reset, userController.resetPost);
 
-// GET - /user/detail/:user_id
-routes.get('/detail/:user_id', authMiddleware.isAuth, userController.userDetail);
-
-// PATCH - /user/edit/:user_id
-routes.patch('/edit/:user_id', authMiddleware.isAuth, userController.userEdit);
-
 module.exports = routes;
