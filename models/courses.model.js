@@ -2,13 +2,16 @@ const mongoose = require("mongoose");
 
 const courseSchema = new mongoose.Schema({
     name: {
-        type: String
+        type: String,
+        trim: true
     },
     description: String,
     credits: {
         type: Number
     },
     courseType: String,
+    maxStudents: Number,
+    code: String,
     deleted: {
         type: Boolean,
         default: false
@@ -20,21 +23,30 @@ const courseSchema = new mongoose.Schema({
         ref: "Department",
     },
     prerequisites: [{
+        courseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course"
+        },
+        name: String,
+        code: String,
     }],
     documentIds: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Document"
-    }]
+    }],
+    classIds: [{
+        classId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Class"
+        },
+        status: String
+    }],
 }, {
     timestamps: true
 });
 
 // Course Model Indexes
 // courseSchema.index({ deleted: 1, createdAt: -1 });
-// courseSchema.index({ code: 1 }, { unique: true });
-// courseSchema.index({ name: "text" });
 
 const Course = mongoose.model("Course", courseSchema, "courses");
 

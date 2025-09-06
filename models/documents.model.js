@@ -19,13 +19,18 @@ const documentSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["lecture", "exercise", "reference", "other"],
+        enum: ["curriculum", "lecture", "exercise", "reference", "other"],
         default: "other"
     },
-    // Thông tin file từ Cloudinary
+    tags: [String],
+    category: String,
+    allowDownload: {
+        type: Boolean,
+        default: false
+    },
+    // Thông tin file
     fileName: {
         type: String,
-        // required: true
     },
     fileSize: {
         type: Number,
@@ -33,7 +38,6 @@ const documentSchema = new mongoose.Schema({
     },
     fileType: {
         type: String,
-        // required: true
     },
     mimeType: {
         type: String,
@@ -41,29 +45,20 @@ const documentSchema = new mongoose.Schema({
     },
     extension: {
         type: String,
-        // required: true
     },
-    cloudinaryUrl: {
-        type: String,
-        // required: true
-    },
-    cloudinaryPublicId: {
-        type: String,
-        // required: true
-    },
-    // Khả năng xem trước
     isPreviewable: {
         type: Boolean,
         default: false
     },
+    isDownload: String,
     previewUrl: {
         type: String,
         default: null
     },
-    // Thông tin khác
+
     status: {
         type: String,
-        enum: ["active", "archived", "deleted"],
+        enum: ["active", "archived", "deleted", "published", "draft"],
         default: "active"
     },
     deleted: {
@@ -78,6 +73,9 @@ const documentSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    language: {
+        type: String
+    },
     // Quan hệ
     authors: [
         {
@@ -91,10 +89,9 @@ const documentSchema = new mongoose.Schema({
             }
         }
     ],
-    averageRating: Number,
     publishedAt: {
         type: Date,
-        default: null // hoặc bạn có thể yêu cầu người upload nhập nếu cần
+        default: null
     },
     uploadedBy: {
         user_id: {
@@ -136,100 +133,12 @@ const documentSchema = new mongoose.Schema({
             }
         ]
     },
-    originalCloudinaryUrl: {
-        type: String,
-        // required: true
-    },
     driveFileId: { type: String },
     downloadUrl: { type: String },
 }, {
     timestamps: true
 });
 
-// Pre-save middleware để tự động set isPreviewable và previewUrl
-// documentSchema.pre('save', function(next) {
-//     // Kiểm tra file có thể xem trước không
-//     const previewableTypes = [
-//         'application/pdf',
-//         'image/jpeg',
-//         'image/jpg',
-//         'image/png',
-//         'image/gif',
-//         'image/webp',
-//         'text/plain',
-//         'text/html',
-//         'application/msword',
-//         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-//         'application/vnd.ms-excel',
-//         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-//         'application/vnd.ms-powerpoint',
-//         'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-//     ];
-
-//     this.isPreviewable = previewableTypes.includes(this.mimeType);
-
-//     if (this.isPreviewable) {
-//         // Tạo preview URL dựa trên loại file
-//         if (this.mimeType === 'application/pdf' || this.mimeType.startsWith('image/')) {
-//             this.previewUrl = this.cloudinaryUrl;
-//         } else {
-//             // Office documents qua Google Docs Viewer
-//             this.previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(this.cloudinaryUrl)}&embedded=true`;
-//         }
-//     }
-
-//     next();
-// });
-// documentSchema.pre('save', function(next) {
-//     // Kiểm tra file có thể xem trước không
-//     const previewableTypes = [
-//         'application/pdf',
-//         'image/jpeg',
-//         'image/jpg',
-//         'image/png',
-//         'image/gif',
-//         'image/webp',
-//         'image/svg+xml',
-//         'text/plain',
-//         'text/html',
-//         'application/msword',
-//         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-//         'application/vnd.ms-excel',
-//         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-//         'application/vnd.ms-powerpoint',
-//         'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-//     ];
-
-//     this.isPreviewable = previewableTypes.includes(this.mimeType);
-
-//     if (this.isPreviewable) {
-//         // Tạo preview URL dựa trên loại file
-//         if (this.mimeType === 'application/pdf') {
-//             // PDF có thể xem trực tiếp từ Cloudinary
-//             this.previewUrl = this.cloudinaryUrl;
-//         } else if (this.mimeType.startsWith('image/')) {
-//             // Hình ảnh xem trực tiếp
-//             this.previewUrl = this.cloudinaryUrl;
-//         } else if (this.mimeType.includes('officedocument') || 
-//                   this.mimeType.includes('msword') || 
-//                   this.mimeType.includes('ms-excel') || 
-//                   this.mimeType.includes('ms-powerpoint')) {
-//             // Office documents - tạo URL với đuôi file rõ ràng
-//             const fileExtension = this.extension;
-//             const cloudinaryUrlWithExt = `${this.cloudinaryUrl}${fileExtension}`;
-
-//             // Sử dụng Microsoft Office Online Viewer
-//             this.previewUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(cloudinaryUrlWithExt)}`;
-//         } else {
-//             // Fallback cho text files
-//             this.previewUrl = this.cloudinaryUrl;
-//         }
-//     } else {
-//         this.previewUrl = null;
-//     }
-
-//     next();
-// });
 documentSchema.pre('save', function (next) {
     const previewableTypes = [
         'application/pdf',
@@ -251,31 +160,10 @@ documentSchema.pre('save', function (next) {
 
     this.isPreviewable = previewableTypes.includes(this.mimeType);
 
-    // if (this.isPreviewable) {
-    //     if (this.mimeType === 'application/pdf') {
-    //         this.previewUrl = this.cloudinaryUrl;
-    //     } else if (this.mimeType.startsWith('image/')) {
-    //         this.previewUrl = this.cloudinaryUrl;
-    //     } else if (this.mimeType.includes('officedocument') || 
-    //               this.mimeType.includes('msword') || 
-    //               this.mimeType.includes('ms-excel') || 
-    //               this.mimeType.includes('ms-powerpoint')) {
-    //         // Để controller xử lý dynamic URL
-    //         this.previewUrl = null;
-    //     } else {
-    //         this.previewUrl = this.cloudinaryUrl;
-    //     }
-    // } else {
-    //     this.previewUrl = null;
-    // }
-
     if (this.isPreviewable) {
         if (this.mimeType === 'application/pdf' || this.mimeType.startsWith('image/')) {
-            this.previewUrl = this.previewUrl; // Đã set từ middleware
+            this.previewUrl = this.previewUrl; 
         } 
-        // else {
-        //     this.previewUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(this.downloadUrl)}&embedded=true`;
-        // }
     }
 
     next();

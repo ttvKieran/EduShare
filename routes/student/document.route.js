@@ -84,7 +84,7 @@ router.get('/:id',
 
 router.get('/:id/preview',
   isAuth,
-  checkPermission(['student']),
+  // checkPermission(['student']),
   documentController.previewDocument
 );
 

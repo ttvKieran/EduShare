@@ -13,6 +13,13 @@ const documentValidate = require('../../validates/lecturer/documentValidate');
 
 // routes.use(permission.checkPermission(['admin', 'lecturer']));
 
+// GET - /lecturer/documents/:id/preview
+routes.get('/:id/preview',
+  authMiddleware.isAuth,
+  // checkPermission(['student']),
+  documentController.previewDocument
+);
+
 // GET - /lecturer/documents
 routes.get(
     '/', 
@@ -27,9 +34,9 @@ routes.get(
 routes.get(
     '/course/:courseId', 
     authMiddleware.isAuth,
-    permission.checkPermission(['admin', 'lecturer']), 
+    // permission.checkPermission(['admin', 'lecturer']), 
     // documentValidate.getDocumentsByCourse,
-    handleValidation,
+    // handleValidation,
     documentController.getDocumentsByCourse
 );
 
@@ -37,9 +44,9 @@ routes.get(
 routes.get(
     '/class/:classId',
     authMiddleware.isAuth,
-    permission.checkPermission(['admin', 'lecturer']),
+    // permission.checkPermission(['admin', 'lecturer']),
     // documentValidate.getDocumentsByClass,
-    handleValidation,
+    // handleValidation,
     documentController.getDocumentsByClass
 );
 
@@ -62,10 +69,10 @@ routes.get(
 //     documentController.uploadDocument
 // );
 routes.post(
-  '/upload', 
+  '/upload/:id', 
   authMiddleware.isAuth,
   fileUpload.single('file'),
-  uploadGoogleDrive.upload, // middleware mới
+  uploadGoogleDrive.upload,
   documentController.uploadDocument
 );
 
@@ -73,9 +80,9 @@ routes.post(
 routes.patch(
     '/:id', 
     authMiddleware.isAuth,
-    permission.checkPermission(['admin', 'lecturer']), 
+    // permission.checkPermission(['admin', 'lecturer']), 
     // documentValidate.updateDocument, 
-    handleValidation,
+    // handleValidation,
     documentController.updateDocument
 )
 
@@ -83,9 +90,9 @@ routes.patch(
 routes.delete(
     '/:id', 
     authMiddleware.isAuth,
-    permission.checkPermission(['admin', 'lecturer']),
+    // permission.checkPermission(['admin', 'lecturer']),
     // documentValidate.deleteDocument, 
-    handleValidation,
+    // handleValidation,
     documentController.deleteDocument
 )
 
@@ -93,9 +100,9 @@ routes.delete(
 routes.get(
     '/preview/:id', 
     authMiddleware.isAuth,
-    permission.checkPermission(['admin', 'lecturer']), 
+    // permission.checkPermission(['admin', 'lecturer']), 
     // documentValidate.previewDocument,
-    handleValidation,
+    // handleValidation,
     documentController.previewDocument
 )
 

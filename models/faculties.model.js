@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
 
 const facultySchema = new mongoose.Schema({
-    name: String,
+    name: {
+        type: String,
+        trim: true
+    },
     description: String,
     deleted: {
         type: Boolean,
@@ -13,10 +16,6 @@ const facultySchema = new mongoose.Schema({
 
 // Faculty Model Indexes
 // facultySchema.index({ deleted: 1, createdAt: -1 });
-// facultySchema.index({ code: 1 });
-// facultySchema.index({ name: "text" });
-// facultySchema.index({ dean: 1 });
-// facultySchema.index({ status: 1, deleted: 1 });
 
 const Faculty = mongoose.model("Faculty", facultySchema, "faculties");
 

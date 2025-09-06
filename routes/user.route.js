@@ -1,18 +1,17 @@
 const express = require('express');
 const routes = express.Router();
-const userController = require('../../controllers/user/auth.controller');
-const authValidate = require('../../validates/user/authValidate');
-const authMiddleware = require('../../middlewares/auth.middleware');
-const handleValidation = require("../../middlewares/handleValidate.middleware");
+const userController = require('../controllers/user.controller');
+const userValidate = require('../validates/userValidate');
+const authMiddleware = require('../middlewares/auth.middleware');
 
 // POST - /user/login
-routes.post('/login', authValidate.login, handleValidation, userController.login);
+routes.post('/login', userController.login);
 
 // POST - /user/refresh
 routes.post('/refresh', userController.refreshToken);
 
-// POST - /user/logout
-routes.post('/logout', authMiddleware.isAuth, userController.logout);
+// GET - /user/logout
+routes.get('/logout', userController.logout);
 
 // // GET - /user/forgot
 // routes.get('/password/forgot', userController.forgot);
@@ -31,5 +30,11 @@ routes.post('/logout', authMiddleware.isAuth, userController.logout);
 
 // // POST - /user/password/reset
 // routes.post('/password/reset', userValidate.reset, userController.resetPost);
+
+// GET - /user/detail/:user_id
+routes.get('/detail/:user_id', authMiddleware.isAuth, userController.userDetail);
+
+// PATCH - /user/edit/:user_id
+routes.patch('/edit/:user_id', authMiddleware.isAuth, userController.userEdit);
 
 module.exports = routes;

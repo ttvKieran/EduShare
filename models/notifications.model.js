@@ -10,6 +10,10 @@ const notificationSchema = new mongoose.Schema({
         courseId: {type: mongoose.Schema.Types.ObjectId, ref: 'Course'},
         name: String
     },
+    class: {
+        classId: {type: mongoose.Schema.Types.ObjectId, ref: 'Class'},
+        name: String
+    },
     type: { type: String },
     document: { 
         documentId: {type: mongoose.Schema.Types.ObjectId, ref: 'Document'},
@@ -18,7 +22,11 @@ const notificationSchema = new mongoose.Schema({
     title: { type: String, required: true },
     content: { type: String },
     priority: { type: String },
-    isNew: { type: Boolean, default: true }
+    isNew: { type: Boolean, default: true },
+    deleted: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true
 });

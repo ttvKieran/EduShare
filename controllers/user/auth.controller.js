@@ -35,7 +35,6 @@ module.exports.refreshToken = async (req, res) => {
     if (!refreshToken) {
         return res.status(400).json({ message: 'Refresh token required!' });
     }
-    console.log("RefreshToken", refreshToken);
     const decoded = await authMethodHelper.verifyRefreshToken(refreshToken);
     if (!decoded) {
         return res.status(400).json({ message: 'Refresh token not verify.' });
@@ -54,7 +53,7 @@ module.exports.refreshToken = async (req, res) => {
     return res.status(200).json({ accessToken });
 };
 
-// GET - /user/logout
+// POST - /user/logout
 module.exports.logout = async (req, res) => {
     try {
         await redis.client.del(`refreshToken:${req.user._id}`, (err, reply) => {

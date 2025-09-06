@@ -8,12 +8,10 @@ exports.isAuth = async (req, res, next) => {
       return res.status(401).json({ message: 'Access token required!' });
     }
     const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
-    // console.log(accessTokenFromHeader);
     const verified = await authMethodHelper.verifyToken(
       accessTokenFromHeader,
       accessTokenSecret,
     );
-    // console.log(verified);
     if (!verified) {
       return res
         .status(401)

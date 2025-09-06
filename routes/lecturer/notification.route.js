@@ -6,7 +6,16 @@ const handleValidation = require("../../middlewares/handleValidate.middleware");
 const permission = require('../../middlewares/permission.middleware');
 // router.use(permission.checkPermission(['admin', 'lecturer']));
 
-// POST: /lecturer/notifications
+// POST: /lecturer/notifications/create
 router.post("/create", notificationController.createNotification);
+
+// GET: /lecturer/notifications/class/:classId
+router.get("/class/:classId", notificationController.getNotificationOfClass);
+
+// GET: /lecturer/notifications/course/:courseId
+router.get("/course/:courseId", notificationController.getNotificationOfCourse);
+
+// DELETE: /lecturer/notifications/:id
+router.delete("/:id", notificationController.deleteNotification);
 
 module.exports = router;

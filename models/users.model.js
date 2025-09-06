@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
         require: true
     },
     password: String,
+    birthDate: String,
     fullName: String,
     phoneNumber: String,
     address: String,
@@ -20,7 +21,7 @@ const userSchema = new mongoose.Schema({
     status: {
         type: String,
         default: "active"
-    }, // active, inactive, suspended, deleted
+    },
 
     facultyIds: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -30,7 +31,7 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Department"
     },
-    classes: [{
+    classIds: [{
         classId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Class"
@@ -39,20 +40,20 @@ const userSchema = new mongoose.Schema({
         credits: Number,
         courseType: String,
         semester: Number
-    }]
+    }],
+    administrativeClass: {
+        administrativeClassId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Course"
+        },
+        code: String
+    },
 }, {
     timestamps: true
 });
 
 // User Model Indexes
 // userSchema.index({ email: 1 }, { unique: true });
-// userSchema.index({ deleted: 1, createdAt: -1 });
-// userSchema.index({ role: 1, deleted: 1 });
-// userSchema.index({ studentId: 1 }, { sparse: true });
-// userSchema.index({ staffId: 1 }, { sparse: true });
-// userSchema.index({ status: 1, deleted: 1 });
-// userSchema.index({ facultyId: 1, deleted: 1 });
-// userSchema.index({ departmentId: 1, deleted: 1 });
 
 const User = mongoose.model("User", userSchema, "users");
 

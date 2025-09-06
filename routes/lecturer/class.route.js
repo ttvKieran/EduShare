@@ -5,19 +5,25 @@ const classValidate = require("../../validates/lecturer/classValidate");
 const handleValidation = require("../../middlewares/handleValidate.middleware");
 const permission = require('../../middlewares/permission.middleware');
 router.use(permission.checkPermission(['admin', 'lecturer']));
-// GET: /lecturer/classes
-router.get("/", classValidate.getAllClasses, handleValidation, classController.getAllClasses);
+// // GET: /lecturer/classes
+// router.get("/", classValidate.getAllClasses, handleValidation, classController.getAllClasses);
 
-// GET: /lecturer/classes/:id
-router.get("/:id", classValidate.getClass, handleValidation, classController.getClassById);
+// // GET: /lecturer/classes/:id
+// router.get("/:id", classValidate.getClass, handleValidation, classController.getClassById);
 
-// GET: /lecturer/classes/students/:id
-router.get("/students/:id", classValidate.getClass, handleValidation, classController.getStudentsInClass);
+// // GET: /lecturer/classes/students/:id
+// router.get("/students/:id", classValidate.getClass, handleValidation, classController.getStudentsInClass);
 
-// DELETE: /lecturer/classes/students/delete/:id
-router.delete("/students/delete/:id", classValidate.getClass, handleValidation, classController.deleteStudentInClass);
+// // DELETE: /lecturer/classes/students/delete/:id
+// router.delete("/students/delete/:id", classValidate.getClass, handleValidation, classController.deleteStudentInClass);
 
-// PATCH: /lecturer/classes/update/:id
-router.patch("/update/:id", classController.updateClass, handleValidation, classController.updateClass);
+// // PATCH: /lecturer/classes/update/:id
+// router.patch("/update/:id", classController.updateClass, handleValidation, classController.updateClass);
+
+// GET: /lecturer/classes/
+router.get("/", classController.getClasses);
+
+// GET: /lecturer/classes/schedule
+router.get("/schedule", classController.getScheduleOfLecturer);
 
 module.exports = router;
