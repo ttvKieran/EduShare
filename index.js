@@ -26,7 +26,8 @@ app.use(express.static('public'));
 
 app.use(bodyParser.json());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  // origin: 'http://localhost:3000',
+  origin: "https://edushare-rho.vercel.app",
   credentials: true
 }));
 app.use(cookieParser());
