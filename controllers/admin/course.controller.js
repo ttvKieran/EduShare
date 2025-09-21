@@ -37,9 +37,15 @@ module.exports.getCourseById = async (req, res) => {
 
 module.exports.createCourse =  async (req, res) => {
     try {
-        const newCourse = new Course(req.body);
-        const savedCourse = await newCourse.save();
-        res.status(201).json(savedCourse);
+        const courseArray = req.body;
+        // console.log(courseArray);
+        for(let course of courseArray){
+            const newCourse = new Course(course);
+            const savedCourse = await newCourse.save();
+        }
+        // const newCourse = new Course(req.body);
+        // const savedCourse = await newCourse.save();
+        res.status(201).json("success");
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Lỗi khi tạo môn học", error });

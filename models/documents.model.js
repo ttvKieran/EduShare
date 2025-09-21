@@ -19,7 +19,7 @@ const documentSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["curriculum", "lecture", "exercise", "reference", "other"],
+        enum: ["curriculum", "lecture", "exercise", "reference", "other", "exam"],
         default: "other"
     },
     tags: [String],

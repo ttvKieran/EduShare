@@ -5,23 +5,29 @@ const { validationResult } = require("express-validator");
 module.exports.getCoursesByLecturerId = async (req, res) => {
     try {
         const coursesMap = new Map();
+        // console.log(req.user.classIds);
         await Promise.all(
             req.user.classIds.map(async (classId) => {
-                const classDoc = await Class.findById(classId.classId.toString());
+                const classDoc = await Class.findById(classId.classId);
+                if (!classDoc) return;
                 let course = await Course.findById(classDoc.courseId).populate('departmentId');
-                if(coursesMap.has(course._id.toString)){
-                    course = coursesMap.get(course._id);
-                    course.classIds.push({
+                if (!course) return;
+                const key = course._id.toString();
+
+                if (coursesMap.has(key)) {
+                    let existingCourse = coursesMap.get(key);
+                    existingCourse.classIds.push({
                         classId: classDoc._id,
                         status: classDoc.status
                     });
-                    coursesMap.set(course._id, course);
-                } else{
+                    coursesMap.set(key, existingCourse);
+                } else {
+                    course = course.toObject(); // chuyển sang plain object để thêm field mới
                     course.classIds = [{
                         classId: classDoc._id,
                         status: classDoc.status
                     }];
-                    coursesMap.set(course._id, course);
+                    coursesMap.set(key, course);
                 }
             })
         );
@@ -37,7 +43,7 @@ module.exports.getCoursesByLecturerId = async (req, res) => {
 
 module.exports.getCourseById = async (req, res) => {
     try {
-        const {courseId} = req.params;
+        const { courseId } = req.params;
         const course = await Course.findById(courseId).populate('departmentId');
         res.status(200).json({
             success: true,

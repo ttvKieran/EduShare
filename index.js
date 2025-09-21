@@ -25,9 +25,14 @@ const routeStudent = require('./routes/student/index.route');
 app.use(express.static('public'));
 
 app.use(bodyParser.json());
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://edushare-rho.vercel.app"
+];
+
 app.use(cors({
-  // origin: 'http://localhost:3000',
-  origin: "https://edushare-rho.vercel.app",
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(cookieParser());

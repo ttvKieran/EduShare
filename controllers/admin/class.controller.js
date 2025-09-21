@@ -44,9 +44,15 @@ module.exports.getClassById = async (req, res) => {
 
 module.exports.createClass = async (req, res) => {
     try {
-        const newClass = new Class(req.body);
-        const savedClass = await newClass.save();
-        res.status(201).json(savedClass);
+        const classArray = req.body;
+        // console.log(classArray);
+        for(let course of classArray){
+            const newCourse = new Class(course);
+            const savedCourse = await newCourse.save();
+        }
+        // const newClass = new Class(req.body);
+        // const savedClass = await newClass.save();
+        res.status(201).json("success");
 
     } catch (error) {
         console.error(error);

@@ -6,6 +6,9 @@ const handleValidation = require("../../middlewares/handleValidate.middleware");
 const permission = require('../../middlewares/permission.middleware');
 // router.use(permission.checkPermission(['admin', 'lecturer']));
 
+// GET: /lecturer/notifications/
+router.get("/", notificationController.getNotificationOfLecturer);
+
 // POST: /lecturer/notifications/create
 router.post("/create", notificationController.createNotification);
 

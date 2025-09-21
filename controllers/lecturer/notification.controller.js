@@ -3,6 +3,34 @@ const Class = require("../../models/classes.model");
 const Documet = require("../../models/documents.model");
 const Notification = require("../../models/notifications.model");
 
+
+module.exports.getNotificationOfLecturer = async (req, res) => {
+    try {
+        const {page, limit} = req.query;
+        const skip = (page - 1) * limit;
+        const notifications = await Notification.find({deleted: false, "author.authorId": req.user._id})
+        .populate('author.authorId')
+        .sort({createdAt: -1})
+        .skip(parseInt(skip))
+        .limit(parseInt(limit));
+        const total = notifications.length;
+        res.status(200).json({
+            success: true,
+            data: {
+                notifications,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    pages: Math.ceil(total/limit)
+                }
+            }
+        });
+    } catch (error) {
+        res.status(500).json(error);
+    }
+};
+
 module.exports.createNotification = async (req, res) => {
     try {
         const { title, content, priority, type, courseId, documentId, classId } = req.body;
