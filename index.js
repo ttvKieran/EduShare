@@ -26,15 +26,10 @@ app.use(express.static('public'));
 
 app.use(bodyParser.json());
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://edushare-git-main-truongvus-projects-3ba43dc4.vercel.app"
-];
-
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: "*"
 }));
+
 app.use(cookieParser());
 
 database.connect();
