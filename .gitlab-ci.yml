@@ -1,0 +1,13 @@
+stages:
+  - build
+  - deploy
+  - checklog
+
+build:
+  stage: build
+  script:
+    - whoami
+    - pwd
+    - ls
+  tags:
+    - truongvu-ThinkPad-E16-Gen-1
