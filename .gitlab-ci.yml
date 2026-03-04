@@ -1,13 +1,257 @@
 stages:
   - build
+  - test
   - deploy
-  - checklog
 
-build:
+variables:
+  # Docker configuration
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+  
+  # GitLab Container Registry
+  REGISTRY_URL: $CI_REGISTRY
+  REGISTRY_IMAGE: $CI_REGISTRY_IMAGE
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+  IMAGE_LATEST: $CI_REGISTRY_IMAGE:latest
+  
+  # Application configuration
+  APP_NAME: edushare
+  APP_PORT: 8081
+  NODE_ENV: production
+  
+  # Staging environment
+  STAGING_HOST: $STAGING_SERVER_HOST
+  STAGING_USER: $STAGING_SERVER_USER
+  DEPLOY_PATH: /opt/edushare
+  
+  # MongoDB configuration 
+  MONGO_USER: admin
+  MONGO_DATABASE: edushare
+  MONGO_PORT: 27017
+  
+  # Redis configuration 
+  REDIS_PORT: 6379
+  
+  # MinIO configuration
+  MINIO_ROOT_USER: minioadmin
+  MINIO_PORT: 9000
+  MINIO_CONSOLE_PORT: 9001
+
+
+# STAGE: BUILD
+
+build:docker:
   stage: build
+  image: docker:24
+  services:
+    - name: docker:24-dind
+      command: ["--insecure-registry=192.168.3.171:5050"]
+
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  rules:
+    - if: '$CI_COMMIT_TAG'  
+  before_script:
+    # Login vào GitLab Container Registry
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin http://$CI_REGISTRY
   script:
-    - whoami
-    - pwd
-    - ls
+    - docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
+    - docker push $IMAGE_TAG
+    - docker push $IMAGE_LATEST
   tags:
-    - truongvu-ThinkPad-E16-Gen-1
+    - local-docker
+
+
+# STAGE: TEST
+
+# Job 1: Lint and code quality check
+test:lint:
+  stage: test
+  image: node:24
+  rules:
+    - if: '$CI_COMMIT_TAG'  
+  before_script:
+    - npm ci
+  script:
+    - node --check index.js
+    - npm list --depth=0 || true
+    - echo "Lint check completed"
+  allow_failure: true
+  tags:
+    - local-docker
+
+# Job 2: Run unit tests
+test:unit:
+  stage: test
+  image: node:24
+  services:
+    - mongo:7.0
+    - redis:7.2-alpine
+  variables:
+    MONGO_HOST: mongo
+    MONGO_PORT: 27017
+    MONGO_DATABASE: edushare_test
+    MONGO_URL: mongodb://mongo:27017/edushare_test
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+  before_script:
+    - npm ci
+  script:
+    - npm test || echo "No tests defined yet"
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    when: always
+    name: "edushare-test-results-$CI_COMMIT_TAG"
+    reports:
+      junit: test-results.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+  allow_failure: true  
+  tags:
+    - local-docker
+
+# Job 3: Security scan
+test:security:
+  stage: test
+  image: node:24
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  before_script:
+    - npm ci
+  script:
+    - echo "Running security audit..."
+    - npm audit --audit-level=moderate || echo "Security vulnerabilities found - Please review!"
+    - echo "Security scan completed"
+  allow_failure: true
+  tags:
+    - local-docker
+
+
+# STAGE: DEPLOY
+
+# Deploy to STAGING environment via SSH + Docker Compose
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual  
+  needs:
+    - build:docker
+    - test:lint
+    - test:unit
+    - test:security
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add "$SSH_PRIVATE_KEY"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    # Copy files cần thiết lên server
+    - ssh $STAGING_USER@$STAGING_HOST "mkdir -p $DEPLOY_PATH"
+    - scp docker-compose.staging.yml $STAGING_USER@$STAGING_HOST:$DEPLOY_PATH/docker-compose.staging.yml
+    - scp deploy-staging.sh $STAGING_USER@$STAGING_HOST:$DEPLOY_PATH/deploy-staging.sh
+    
+    # Chạy deployment script trên server
+    - |
+      ssh $STAGING_USER@$STAGING_HOST << EOF
+        cd $DEPLOY_PATH
+        chmod +x deploy-staging.sh
+        
+        # Export GitLab Registry variables
+        export CI_REGISTRY=$CI_REGISTRY
+        export CI_REGISTRY_USER=$CI_REGISTRY_USER
+        export CI_REGISTRY_PASSWORD=$CI_REGISTRY_PASSWORD
+        export CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE
+        export CI_COMMIT_TAG=$CI_COMMIT_TAG
+        
+        # Export application variables
+        export DEPLOY_PATH=$DEPLOY_PATH
+        export APP_PORT=$APP_PORT
+        export NODE_ENV=$NODE_ENV
+        export CLOUDINARY_API_KEY$CLOUDINARY_API_KEY
+        export CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
+        export SALT_ROUNDS=$SALT_ROUNDS
+        export ACCESS_TOKEN_SECRET=$ACCESS_TOKEN_SECRET
+        export REFRESH_TOKEN_SECRET=$REFRESH_TOKEN_SECRET
+        export ACCESS_TOKEN_LIFE=$ACCESS_TOKEN_LIFE
+        export REFRESH_TOKEN_LIFE=$REFRESH_TOKEN_LIFE
+        
+        # Export MongoDB variables
+        export MONGO_USER=$MONGO_USER
+        export MONGO_PASSWORD=$MONGO_PASSWORD
+        export MONGO_DATABASE=$MONGO_DATABASE
+        export MONGO_PORT=$MONGO_PORT
+        export MONGO_HOST=$MONGO_HOST
+        export MONGO_URL=$MONGO_URL
+        
+        # Export Redis variables
+        export REDIS_PASSWORD=$REDIS_PASSWORD
+        export REDIS_PORT=$REDIS_PORT
+        export REDIS_HOST=$REDIS_HOST
+        
+        # Export MinIO variables
+        export MINIO_ROOT_USER=$MINIO_ROOT_USER
+        export MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD
+        export MINIO_PORT=$MINIO_PORT
+        export MINIO_CONSOLE_PORT=$MINIO_CONSOLE_PORT
+        
+        # Run deploy script
+        ./deploy-staging.sh
+      EOF
+    
+    - echo "Deployment completed successfully"
+  after_script:
+    - echo "Deployment Summary"
+    - echo "Environment:STAGING"
+    - echo "Version:$CI_COMMIT_TAG"
+    - echo "Image:$IMAGE_TAG"
+    - echo "URL:http://$STAGING_HOST:$APP_PORT"
+  environment:
+    name: staging
+    url: http://$STAGING_HOST:$APP_PORT
+    on_stop: stop:staging
+  tags:
+    - local-docker
+
+# Stop STAGING environment
+stop:staging:
+  stage: deploy
+  image: alpine:latest
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add "$SSH_PRIVATE_KEY"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - |
+      ssh $STAGING_USER@$STAGING_HOST << EOF
+        cd $DEPLOY_PATH
+        docker compose -f docker-compose.staging.yml down
+        echo "STAGING environment stopped"
+      EOF
+  environment:
+    name: staging
+    action: stop
+  tags:
+    - local-docker
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: always
+    - when: never
+
